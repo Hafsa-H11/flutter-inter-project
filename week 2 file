@@ -1,6 +1,19 @@
 week 2 file # Week 2 - Counter App
 
 This Flutter app demonstrates basic state management using `setState()`.
+# Week 2 - To-Do List App
+
+A simple to-do list app built with Flutter.
+
+## Features
+- Add tasks
+- Delete tasks
+- Persistent storage using SharedPreferences
+
+## How to Run
+- Run `flutter pub get`
+- Then run `flutter run` or `flutter run -d chrome`
+
 
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
