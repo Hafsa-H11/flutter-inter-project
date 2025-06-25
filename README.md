@@ -8,7 +8,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Navigation Demo',
+      title: 'Login Validation',
       debugShowCheckedModeBanner: false,
       home: LoginScreen(),
     );
@@ -27,45 +27,62 @@ class LoginScreen extends StatelessWidget {
       body: Padding(
         padding: const EdgeInsets.all(24.0),
         child: Form(
-          key: _formKey,
+          key: _formKey, // 👈 attaches the form key
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
+              // 🔹 Email Field
               TextFormField(
                 controller: emailController,
-                decoration: InputDecoration(labelText: "Email"),
+                decoration: InputDecoration(
+                  labelText: "Email",
+                  border: OutlineInputBorder(),
+                ),
                 validator: (value) {
-                  if (value == null || !value.contains('@')) {
-                    return 'Enter valid email';
+                  if (value == null || value.isEmpty) {
+                    return 'Email is required';
+                  }
+                  final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w]{2,4}$');
+                  if (!emailRegex.hasMatch(value)) {
+                    return 'Enter a valid email';
                   }
                   return null;
                 },
               ),
               SizedBox(height: 16),
+
+              // 🔹 Password Field
               TextFormField(
                 controller: passwordController,
                 obscureText: true,
-                decoration: InputDecoration(labelText: "Password"),
+                decoration: InputDecoration(
+                  labelText: "Password",
+                  border: OutlineInputBorder(),
+                ),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return 'Enter password';
+                    return 'Password cannot be empty';
                   }
                   return null;
                 },
               ),
-              SizedBox(height: 20),
+              SizedBox(height: 24),
+
+              // 🔹 Login Button
               ElevatedButton(
-                child: Text("Login"),
                 onPressed: () {
                   if (_formKey.currentState!.validate()) {
-                    // Navigate to Home Screen
+                    // If valid, navigate
                     Navigator.push(
                       context,
                       MaterialPageRoute(builder: (_) => HomeScreen()),
                     );
                   }
                 },
+                child: Text("Login"),
               ),
+
+              // 🔹 Forgot Password Text
               TextButton(
                 onPressed: () {},
                 child: Text("Forgot Password?"),
@@ -78,15 +95,15 @@ class LoginScreen extends StatelessWidget {
   }
 }
 
-// ✅ Second Screen
+// ✅ HomeScreen (for navigation)
 class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text("Home Screen")),
+      appBar: AppBar(title: Text("Home")),
       body: Center(
         child: Text(
-          "Welcome to Home!",
+          "Welcome to the Home Screen!",
           style: TextStyle(fontSize: 24),
         ),
       ),
