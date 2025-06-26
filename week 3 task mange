@@ -1,0 +1,300 @@
+# Week 3 – Task Management App
+
+This is a simple Flutter task management app that lets you:
+- Add tasks
+- Mark tasks as complete/incomplete
+- Delete tasks
+- Saves data using SharedPreferences
+
+## How to Run
+
+1. Clone the repo
+2. Run `flutter pub get`
+3. Run the app using:
+
+// lib/main.dart
+import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+// Corrected import path: assuming add_task_screen.dart is in the same directory as main.dart
+import 'add_home screen.dart';
+
+// The main entry point of the Flutter application.
+void main() {
+  runApp(const MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Task Manager App', // Title of the application
+      theme: ThemeData(
+        primarySwatch: Colors.blueGrey, // Define the primary color scheme
+        visualDensity: VisualDensity.adaptivePlatformDensity, // Adjusts visual density based on platform
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Colors.blueGrey, // AppBar background color
+          foregroundColor: Colors.white, // AppBar text and icon color
+        ),
+      ),
+      debugShowCheckedModeBanner: false, // Hides the debug banner in the top right corner
+      home: const HomeScreen(), // Sets HomeScreen as the initial screen of the app
+    );
+  }
+}
+
+class HomeScreen extends StatefulWidget {
+  const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  List<String> tasks = []; // List to hold task strings
+
+  @override
+  void initState() {
+    super.initState();
+    loadTasks(); // Load tasks from SharedPreferences when the widget initializes
+  }
+
+  // Asynchronously loads tasks from SharedPreferences
+  void loadTasks() async {
+    final prefs = await SharedPreferences.getInstance(); // Get SharedPreferences instance
+    setState(() {
+      // Retrieve the list of strings associated with the 'tasks' key.
+      // If no data is found, it defaults to an empty list.
+      tasks = prefs.getStringList('tasks') ?? [];
+    });
+  }
+
+  // Asynchronously saves the current list of tasks to SharedPreferences
+  void saveTasks() async {
+    final prefs = await SharedPreferences.getInstance(); // Get SharedPreferences instance
+    prefs.setStringList('tasks', tasks); // Save the current list of tasks
+  }
+
+  // Adds a new task to the list and saves it
+  void addTask(String task) {
+    setState(() {
+      tasks.add(task); // Add the new task
+      saveTasks(); // Persist the updated list
+    });
+  }
+
+  // Deletes a task from the list at a given index and saves it
+  void deleteTask(int index) {
+    setState(() {
+      tasks.removeAt(index); // Remove the task at the specified index
+      saveTasks(); // Persist the updated list
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Task Manager'), // Title of the AppBar
+        centerTitle: true, // Centers the title
+        actions: [
+          // IconButton to navigate to AddTaskScreen
+          IconButton(
+            icon: const Icon(Icons.add), // Plus icon
+            onPressed: () async {
+              // Navigate to AddTaskScreen and wait for a result
+              final newTask = await Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const AddTaskScreen()),
+              );
+              // If a new task string is returned, add it to the list
+              if (newTask != null) {
+                addTask(newTask);
+              }
+            },
+          ),
+        ],
+      ),
+      body: tasks.isEmpty
+          ? const Center(
+              // Display a message if there are no tasks
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.assignment, size: 80, color: Colors.blueGrey), // An icon to hint at tasks
+                  SizedBox(height: 20),
+                  Text(
+                    'No tasks yet! Click the + to add one.',
+                    style: TextStyle(fontSize: 18, color: Colors.blueGrey),
+                  ),
+                ],
+              ),
+            )
+          : ListView.builder(
+              itemCount: tasks.length, // Number of tasks to display
+              itemBuilder: (context, index) {
+                return Card(
+                  margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
+                  elevation: 3,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  child: ListTile(
+                    // Leading icon for the task, indicating it's not "completed" in this simple version
+                    leading: const Icon(Icons.radio_button_off, color: Colors.blueGrey),
+                    title: Text(
+                      tasks[index],
+                      style: const TextStyle(fontSize: 17),
+                    ),
+                    trailing: IconButton(
+                      icon: const Icon(Icons.delete, color: Colors.redAccent), // Delete icon
+                      onPressed: () => showDialog(
+                        context: context,
+                        builder: (BuildContext dialogContext) {
+                          return AlertDialog(
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                            title: const Text('Delete Task?'),
+                            content: Text('Are you sure you want to delete "${tasks[index]}"?'),
+                            actions: <Widget>[
+                              TextButton(
+                                onPressed: () {
+                                  Navigator.of(dialogContext).pop(); // Close the dialog
+                                },
+                                child: const Text('Cancel'),
+                              ),
+                              ElevatedButton(
+                                onPressed: () {
+                                  deleteTask(index); // Delete the task
+                                  Navigator.of(dialogContext).pop(); // Close the dialog
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.redAccent,
+                                  foregroundColor: Colors.white,
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                ),
+                                child: const Text('Delete'),
+                              ),
+                            ],
+                          );
+                        },
+                      ),
+                    ),
+                    onTap: () {
+                      // In this simplified version, tapping doesn't mark as complete.
+                      // For "mark as complete", you'd need a more complex task object
+                      // (as shown in my previous detailed solution).
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Tapped: ${tasks[index]}'),
+                          duration: const Duration(seconds: 1),
+                        ),
+                      );
+                    },
+                  ),
+                );
+              },
+            ),
+    );
+  }
+}
+ add task screen code 
+// lib/screens/add_task_screen.dart
+import 'package:flutter/material.dart';
+
+class AddTaskScreen extends StatefulWidget {
+  const AddTaskScreen({super.key});
+
+  @override
+  State<AddTaskScreen> createState() => _AddTaskScreenState();
+}
+
+class _AddTaskScreenState extends State<AddTaskScreen> {
+  final TextEditingController _taskController = TextEditingController();
+
+  @override
+  void dispose() {
+    _taskController.dispose(); // Dispose the controller to prevent memory leaks
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Add New Task'),
+        backgroundColor: Colors.blueGrey, // Match the theme of your main app
+        foregroundColor: Colors.white,
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            TextField(
+              controller: _taskController,
+              decoration: InputDecoration(
+                labelText: 'Task Description',
+                hintText: 'e.g., Buy groceries',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: const BorderSide(color: Colors.blueGrey, width: 2),
+                ),
+              ),
+              autofocus: true, // Automatically focus the text field when the screen opens
+              onSubmitted: (value) {
+                // If the user submits by pressing Enter/Done, check if input is valid
+                if (value.trim().isNotEmpty) {
+                  Navigator.pop(context, value.trim()); // Return the task description
+                } else {
+                  // Show a snackbar if the input is empty
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: const Text('Task description cannot be empty!'),
+                      backgroundColor: Colors.redAccent,
+                      behavior: SnackBarBehavior.floating, // Makes the snackbar float
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)), // Rounded corners for snackbar
+                      margin: const EdgeInsets.all(10), // Margin around the snackbar
+                    ),
+                  );
+                }
+              },
+            ),
+            const SizedBox(height: 20), // Spacer
+            ElevatedButton(
+              onPressed: () {
+                // If the user taps the button, check if input is valid
+                if (_taskController.text.trim().isNotEmpty) {
+                  Navigator.pop(context, _taskController.text.trim()); // Return the task description
+                } else {
+                  // Show a snackbar if the input is empty
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: const Text('Task description cannot be empty!'),
+                      backgroundColor: Colors.redAccent,
+                      behavior: SnackBarBehavior.floating,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      margin: const EdgeInsets.all(10),
+                    ),
+                  );
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blueGrey, // Button background color
+                foregroundColor: Colors.white, // Button text color
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10), // Rounded corners for the button
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15), // Padding inside the button
+              ),
+              child: const Text(
+                'Add Task',
+                style: TextStyle(fontSize: 16),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
