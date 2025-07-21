@@ -1,0 +1,65 @@
+import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'user_model.dart';
+
+class UserProfileScreen extends StatefulWidget {
+  @override
+  State<UserProfileScreen> createState() => _UserProfileScreenState();
+}
+
+class _UserProfileScreenState extends State<UserProfileScreen> {
+  late Future<User> user;
+
+  Future<User> fetchUser() async {
+    final response =
+        await http.get(Uri.parse('https://reqres.in/api/users/2'));
+
+    if (response.statusCode == 200) {
+      return User.fromJson(json.decode(response.body));
+    } else {
+      throw Exception('Failed to load user');
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    user = fetchUser();
+  }
+  
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text("User Profile")),
+      body: FutureBuilder<User>(
+        future: user,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting)
+            return Center(child: CircularProgressIndicator());
+
+          if (snapshot.hasError)
+            return Center(child: Text("Error: ${snapshot.error}"));
+
+          final user = snapshot.data!;
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                CircleAvatar(
+                  radius: 50,
+                  backgroundImage: NetworkImage(user.avatar),
+                ),
+                SizedBox(height: 16),
+                Text(user.name, style: TextStyle(fontSize: 24)),
+                Text(user.email, style: TextStyle(color: Colors.grey[600])),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+  
+}
