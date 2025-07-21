@@ -1,0 +1,176 @@
+import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'add_home screen.dart'; // Make sure the file name is correct
+import 'user_profile_screen.dart'; // Add this for navigation to profile
+
+void main() {
+  runApp(const MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Task Manager App',
+      theme: ThemeData(
+        primarySwatch: Colors.blueGrey,
+        visualDensity: VisualDensity.adaptivePlatformDensity,
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Colors.blueGrey,
+          foregroundColor: Colors.white,
+        ),
+      ),
+      debugShowCheckedModeBanner: false,
+      home: const HomeScreen(),
+    );
+  }
+}
+
+class HomeScreen extends StatefulWidget {
+  const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  List<String> tasks = [];
+
+  @override
+  void initState() {
+    super.initState();
+    loadTasks();
+  }
+
+  void loadTasks() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      tasks = prefs.getStringList('tasks') ?? [];
+    });
+  }
+
+  void saveTasks() async {
+    final prefs = await SharedPreferences.getInstance();
+    prefs.setStringList('tasks', tasks);
+  }
+
+  void addTask(String task) {
+    setState(() {
+      tasks.add(task);
+      saveTasks();
+    });
+  }
+
+  void deleteTask(int index) {
+    setState(() {
+      tasks.removeAt(index);
+      saveTasks();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Task Manager'),
+        centerTitle: true,
+        actions: [
+          // 👤 User Profile Navigation
+          IconButton(
+            icon: const Icon(Icons.person),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => UserProfileScreen()),
+              );
+            },
+          ),
+          // ➕ Add Task Navigation
+          IconButton(
+            icon: const Icon(Icons.add),
+            onPressed: () async {
+              final newTask = await Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const AddTaskScreen()),
+              );
+              if (newTask != null) {
+                addTask(newTask);
+              }
+            },
+          ),
+        ],
+      ),
+      body: tasks.isEmpty
+          ? const Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.assignment, size: 80, color: Colors.blueGrey),
+                  SizedBox(height: 20),
+                  Text(
+                    'No tasks yet! Click the + to add one.',
+                    style: TextStyle(fontSize: 18, color: Colors.blueGrey),
+                  ),
+                ],
+              ),
+            )
+          : ListView.builder(
+              itemCount: tasks.length,
+              itemBuilder: (context, index) {
+                return Card(
+                  margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
+                  elevation: 3,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  child: ListTile(
+                    leading: const Icon(Icons.radio_button_off, color: Colors.blueGrey),
+                    title: Text(tasks[index], style: const TextStyle(fontSize: 17)),
+                    trailing: IconButton(
+                      icon: const Icon(Icons.delete, color: Colors.redAccent),
+                      onPressed: () => showDialog(
+                        context: context,
+                        builder: (BuildContext dialogContext) {
+                          return AlertDialog(
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                            title: const Text('Delete Task?'),
+                            content: Text('Are you sure you want to delete "${tasks[index]}"?'),
+                            actions: <Widget>[
+                              TextButton(
+                                onPressed: () {
+                                  Navigator.of(dialogContext).pop();
+                                },
+                                child: const Text('Cancel'),
+                              ),
+                              ElevatedButton(
+                                onPressed: () {
+                                  deleteTask(index);
+                                  Navigator.of(dialogContext).pop();
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.redAccent,
+                                  foregroundColor: Colors.white,
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                ),
+                                child: const Text('Delete'),
+                              ),
+                            ],
+                          );
+                        },
+                      ),
+                    ),
+                    onTap: () {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Tapped: ${tasks[index]}'),
+                          duration: const Duration(seconds: 1),
+                        ),
+                      );
+                    },
+                  ),
+                );
+              },
+            ),
+    );
+  }
+}
